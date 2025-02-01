@@ -18,8 +18,8 @@ Questo progetto è stato sviluppato per il corso di Introduzione all'Intelligenz
 
 1. Clona il repository:
     ```sh
-    git clone <URL del repository>
-    cd <nome del repository>
+    git clone https://github.com/Latta96/imkb
+    cd imkb
     ```
 
 2. Costruisci il progetto con Maven:
