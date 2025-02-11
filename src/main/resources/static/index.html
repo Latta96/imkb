@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PL(AI)LIST</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f7fa;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1, h2, h3 {
+      text-align: center;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    li {
+      margin: 5px 0;
+    }
+    .playlist-link {
+      color: #4285f4;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .playlist-link:hover {
+      text-decoration: underline;
+    }
+    button {
+      display: inline-block;
+      margin: 10px;
+      padding: 10px 20px;
+      background-color: #4285f4;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #357ae8;
+    }
+    .centered {
+      text-align: center;
+    }
+    .spinner {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #4285f4;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+      display: none;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    #timelineContainer {
+      margin-top: 30px;
+      border: 1px solid #ccc;
+      height: 300px;
+    }
+    #tracksList {
+      margin-top: 20px;
+    }
+    /* Map styling */
+    #map {
+      height: 400px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>PL(AI)LISTy</h1>
+    <div class="centered">
+      <button id="loginButton">Login</button>
+      <button id="logoutButton">Logout</button>
+      <button id="fetchPlaylists">Carica Playlist</button>
+      <div id="spinner" class="spinner"></div>
+    </div>
+    <h2>Playlists</h2>
+    <ul id="playlistList"></ul>
+    <h2>Tracce</h2>
+    <div id="tracksList"></div>
+    <h2>Timeline delle Canzoni</h2>
+    <div id="timelineContainer"></div>
+    <h2>Mappa Artisti</h2>
+    <div id="map"></div>
+  </div>
+
+  <!-- Vis timeline JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <script>
+    const playlistList = document.getElementById('playlistList');
+    const timelineContainer = document.getElementById('timelineContainer');
+    const tracksList = document.getElementById('tracksList');
+    const spinner = document.getElementById('spinner');
+
+    document.getElementById('loginButton').addEventListener('click', () => {
+      window.location.href = '/oauth2/authorization/spotify';
+    });
+    document.getElementById('logoutButton').addEventListener('click', () => {
+      window.location.href = '/logout';
+    });
+    document.getElementById('fetchPlaylists').addEventListener('click', fetchPlaylists);
+
+    function showSpinner() {
+      spinner.style.display = 'block';
+    }
+    function hideSpinner() {
+      spinner.style.display = 'none';
+    }
+
+    function fetchPlaylists() {
+      showSpinner();
+      playlistList.innerHTML = '';
+      timelineContainer.innerHTML = '';
+      tracksList.innerHTML = '';
+      fetch('/api/playlists/import')
+        .then(response => response.json())
+        .then(data => {
+          hideSpinner();
+          data.forEach(playlist => {
+            const li = document.createElement('li');
+            const link = document.createElement('a');
+            link.textContent = playlist.name;
+            link.href = '#';
+            link.classList.add('playlist-link');
+            link.addEventListener('click', event => {
+              event.preventDefault();
+              fetchTracksForPlaylist(playlist.id, playlist.name);
+            });
+            li.appendChild(link);
+            playlistList.appendChild(li);
+          });
+        })
+        .catch(error => {
+          hideSpinner();
+          console.error("Errore nel recupero delle playlist:", error);
+          playlistList.textContent = 'Errore nel recupero delle playlist.';
+        });
+    }
+
+    function geocodeAddress(address) {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
+      return fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          if (data && data.length > 0) {
+            return {
+              lat: parseFloat(data[0].lat),
+              lon: parseFloat(data[0].lon)
+            };
+          }
+          return null;
+        })
+        .catch(error => {
+          console.error("Errore nella geocodifica dell'indirizzo:", error);
+          return null;
+        });
+    }
+    
+    const map = L.map('map').setView([41.9028, 12.4964], 4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    function updateMapWithArtists(artistsMap) {
+        console.log("ArtistsMap:", artistsMap);
+
+        const groupedMarkers = {};
+
+        Object.keys(artistsMap).forEach(artistName => {
+        const artist = artistsMap[artistName];
+        if (artist.birthPlace && artist.birthPlace !== "N/D") {
+            console.log(`Geocoding per ${artist.name}: ${artist.birthPlace}`);
+            geocodeAddress(artist.birthPlace).then(coords => {
+            if (coords) {
+                console.log(`Coordinate per ${artist.name}:`, coords);
+                const coordKey = `${coords.lat.toFixed(5)},${coords.lon.toFixed(5)}`;
+
+                if (groupedMarkers[coordKey]) {
+                groupedMarkers[coordKey].artists.push(artist);
+                let popupContent = '';
+                groupedMarkers[coordKey].artists.forEach(a => {
+                    popupContent += `<strong>${a.name}</strong><br>${a.birthPlace}<br>${a.birthDate}<hr>`;
+                });
+                groupedMarkers[coordKey].marker.bindPopup(popupContent);
+                } else {
+                const marker = L.marker([coords.lat, coords.lon]).addTo(map);
+                groupedMarkers[coordKey] = {
+                    marker: marker,
+                    artists: [artist]
+                };
+                const popupContent = `<strong>${artist.name}</strong><br>${artist.birthPlace}<br>${artist.birthDate}`;
+                marker.bindPopup(popupContent);
+                }
+            } else {
+                console.log(`Nessun risultato di geocoding per ${artist.name}`);
+            }
+            });
+        } else {
+            console.log(`Artist ${artist.name} non ha un luogo valido: ${artist.birthPlace}`);
+        }
+        });
+    }
+
+    function fetchTracksForPlaylist(playlistId, playlistName) {
+      showSpinner();
+      timelineContainer.innerHTML = '';
+      tracksList.innerHTML = '';
+      fetch(`/api/playlists/${playlistId}/tracks`)
+        .then(response => response.json())
+        .then(data => {
+          hideSpinner();
+          if (data.length === 0) {
+            timelineContainer.textContent = `Nessuna traccia trovata per "${playlistName}"`;
+            tracksList.textContent = `Nessuna traccia trovata per "${playlistName}"`;
+          } else {
+            let listHtml = '<ul>';
+            const artistsMap = {};
+            data.forEach(track => {
+              listHtml += `<li>ID: ${track.spotifyTrackId} - ${track.title} - ${track.artist.name} (${track.releaseDate})</li>`;
+              if (track.artist && track.artist.name) {
+                if (!artistsMap[track.artist.name]) {
+                  artistsMap[track.artist.name] = track.artist;
+                }
+              }
+            });
+            listHtml += '</ul>';
+        
+            let artistsSummaryHtml = '<h3>Resoconto Artisti:</h3><ul>';
+            for (const artistName in artistsMap) {
+                const artist = artistsMap[artistName];
+                artistsSummaryHtml += `<li>${artist.name} - Nascita/Fondazione: ${artist.birthDate} - Luogo: ${artist.birthPlace}</li>`;
+            }
+            artistsSummaryHtml += '</ul>';
+
+            tracksList.innerHTML = artistsSummaryHtml + listHtml;
+
+            const items = data.map((track, index) => {
+                if (track.releaseDate && track.releaseDate !== "N/D") {
+                const dateParts = track.releaseDate.split('/');
+                if (dateParts.length === 3) {
+                    const isoDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                    return {
+                    id: index,
+                    content: `<strong>${track.title}</strong><br>${track.artist.name}`,
+                    start: isoDate
+                    };
+                }
+                }
+                return null;
+            }).filter(item => item !== null);
+
+            items.sort((a, b) => new Date(a.start) - new Date(b.start));
+            new vis.Timeline(timelineContainer, items, {
+                editable: false,
+                margin: { item: 20, axis: 40 }
+            });
+
+            updateMapWithArtists(artistsMap);
+          }
+        })
+        .catch(error => {
+          hideSpinner();
+          console.error("Errore nel recupero delle tracce:", error);
+          timelineContainer.textContent = 'Errore nel recupero delle tracce.';
+          tracksList.textContent = 'Errore nel recupero delle tracce.';
+        });
+    }
+  </script>
+</body>
+</html>

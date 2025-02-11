@@ -5,6 +5,7 @@ import java.util.List;
 
 @Data
 public class Playlist {
+    private String id;
     private String name;
-    private List<Song> songs;
+    private List<Track> tracks;
 }
