@@ -1,113 +1,150 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>PL(AI)LIST</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  
+  <!-- TimelineJS CSS -->
+  <link title="timeline-styles" rel="stylesheet" href="https://cdn.knightlab.com/libs/timeline3/latest/css/timeline.css">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"/>
+
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f5f7fa;
-      color: #333;
       margin: 0;
-      padding: 20px;
+      padding: 0;
+      font-family: Helvetica, Arial, sans-serif;
+      background-color: #272727; 
+      color: #FFFFFF;
     }
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      background-color: #fff;
-      padding: 20px;
-      border-radius: 4px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    h1, h2, h3 {
+
+    .header {
       text-align: center;
+      padding: 20px;
+      background-color: #1db954;
+      color: #fff;
     }
-    ul {
-      padding-left: 20px;
+    .header h1 {
+      margin: 0;
+      font-size: 2rem;
     }
-    li {
-      margin: 5px 0;
+
+    .container {
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 20px;
     }
-    .playlist-link {
-      color: #4285f4;
-      text-decoration: none;
-      cursor: pointer;
-    }
-    .playlist-link:hover {
-      text-decoration: underline;
-    }
-    button {
-      display: inline-block;
-      margin: 10px;
-      padding: 10px 20px;
-      background-color: #4285f4;
+
+    button, .playlist-link {
+      background-color: #1db954;
       color: #fff;
       border: none;
       border-radius: 4px;
-      cursor: pointer;
+      padding: 10px 16px;
       font-size: 16px;
+      cursor: pointer;
+      text-decoration: none;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      display: inline-block;
     }
-    button:hover {
-      background-color: #357ae8;
+    button:hover, .playlist-link:hover {
+      background-color: #15943e;
     }
-    .centered {
-      text-align: center;
+
+    #tracksList ul {
+      list-style-type: none;
+      padding-left: 0;
+      margin: 0;
     }
+    #tracksList li {
+      padding: 8px;
+      margin-bottom: 4px;
+      background-color: #222;
+      border-radius: 4px;
+      line-height: 1.4;
+    }
+
+    .checkmark {
+      color: #1db954;
+      margin-left: 5px;
+    }
+    .crossmark {
+      color: #ff4d4d;
+      margin-left: 5px;
+    }
+
     .spinner {
       border: 8px solid #f3f3f3;
-      border-top: 8px solid #4285f4;
+      border-top: 8px solid #1db954;
       border-radius: 50%;
       width: 60px;
       height: 60px;
       animation: spin 1s linear infinite;
-      margin: 20px auto;
       display: none;
+      margin: 20px auto;
     }
     @keyframes spin {
-      0% { transform: rotate(0deg); }
+      0%   { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+
     #timelineContainer {
-      margin-top: 30px;
-      border: 1px solid #ccc;
+      margin-top: 20px;
       height: 300px;
     }
-    #tracksList {
-      margin-top: 20px;
-    }
-    /* Map styling */
+
     #map {
       height: 400px;
       margin-top: 20px;
+      border: 1px solid #333;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 10px;
+      }
+      button, .playlist-link {
+        display: block;
+        margin-right: 0;
+        margin-bottom: 10px;
+      }
     }
   </style>
 </head>
 <body>
+  <div class="header">
+    <h1>PL(AI)LIST</h1>
+  </div>
+  
   <div class="container">
-    <h1>PL(AI)LISTy</h1>
-    <div class="centered">
+    <div class="buttons">
       <button id="loginButton">Login</button>
       <button id="logoutButton">Logout</button>
       <button id="fetchPlaylists">Carica Playlist</button>
-      <div id="spinner" class="spinner"></div>
     </div>
+    <div id="spinner" class="spinner"></div>
+    
     <h2>Playlists</h2>
-    <ul id="playlistList"></ul>
-    <h2>Tracce</h2>
-    <div id="tracksList"></div>
-    <h2>Timeline delle Canzoni</h2>
-    <div id="timelineContainer"></div>
-    <h2>Mappa Artisti</h2>
-    <div id="map"></div>
-  </div>
+    <div id="playlistList"></div>
+    <div id="playlistDetails" style="display: none;">
+      <h2>Timeline</h2>
+      <div id="timelineContainer"></div>
+      
+      <h2>Mappa Artisti</h2>
+      <div id="map"></div>
 
-  <!-- Vis timeline JS -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+      <h2>Dettagli</h2>
+      <div id="tracksList"></div>
+    </div>
+  </div>
+  
+  <!-- TimelineJS JavaScript -->
+  <script src="https://cdn.knightlab.com/libs/timeline3/latest/js/timeline.js"></script>
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  
   <script>
     const playlistList = document.getElementById('playlistList');
     const timelineContainer = document.getElementById('timelineContainer');
@@ -139,7 +176,6 @@
         .then(data => {
           hideSpinner();
           data.forEach(playlist => {
-            const li = document.createElement('li');
             const link = document.createElement('a');
             link.textContent = playlist.name;
             link.href = '#';
@@ -148,8 +184,7 @@
               event.preventDefault();
               fetchTracksForPlaylist(playlist.id, playlist.name);
             });
-            li.appendChild(link);
-            playlistList.appendChild(li);
+            playlistList.appendChild(link);
           });
         })
         .catch(error => {
@@ -177,50 +212,50 @@
           return null;
         });
     }
-    
+
     const map = L.map('map').setView([41.9028, 12.4964], 4);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
-    
+
     function updateMapWithArtists(artistsMap) {
-        console.log("ArtistsMap:", artistsMap);
+      console.log("ArtistsMap:", artistsMap);
 
-        const groupedMarkers = {};
+      const groupedMarkers = {};
 
-        Object.keys(artistsMap).forEach(artistName => {
+      Object.keys(artistsMap).forEach(artistName => {
         const artist = artistsMap[artistName];
         if (artist.birthPlace && artist.birthPlace !== "N/D") {
-            console.log(`Geocoding per ${artist.name}: ${artist.birthPlace}`);
-            geocodeAddress(artist.birthPlace).then(coords => {
+          console.log(`Geocoding per ${artist.name}: ${artist.birthPlace}`);
+          geocodeAddress(artist.birthPlace).then(coords => {
             if (coords) {
-                console.log(`Coordinate per ${artist.name}:`, coords);
-                const coordKey = `${coords.lat.toFixed(5)},${coords.lon.toFixed(5)}`;
+              console.log(`Coordinate per ${artist.name}:`, coords);
+              const coordKey = `${coords.lat.toFixed(5)},${coords.lon.toFixed(5)}`;
 
-                if (groupedMarkers[coordKey]) {
+              if (groupedMarkers[coordKey]) {
                 groupedMarkers[coordKey].artists.push(artist);
                 let popupContent = '';
                 groupedMarkers[coordKey].artists.forEach(a => {
-                    popupContent += `<strong>${a.name}</strong><br>${a.birthPlace}<br>${a.birthDate}<hr>`;
+                  popupContent += `<strong>${a.name}</strong><br>${a.birthPlace}<br>${a.birthDate}<hr>`;
                 });
                 groupedMarkers[coordKey].marker.bindPopup(popupContent);
-                } else {
+              } else {
                 const marker = L.marker([coords.lat, coords.lon]).addTo(map);
                 groupedMarkers[coordKey] = {
-                    marker: marker,
-                    artists: [artist]
+                  marker: marker,
+                  artists: [artist]
                 };
                 const popupContent = `<strong>${artist.name}</strong><br>${artist.birthPlace}<br>${artist.birthDate}`;
                 marker.bindPopup(popupContent);
-                }
+              }
             } else {
-                console.log(`Nessun risultato di geocoding per ${artist.name}`);
+              console.log(`Nessun risultato di geocoding per ${artist.name}`);
             }
-            });
+          });
         } else {
-            console.log(`Artist ${artist.name} non ha un luogo valido: ${artist.birthPlace}`);
+          console.log(`Artist ${artist.name} non ha un luogo valido: ${artist.birthPlace}`);
         }
-        });
+      });
     }
 
     function fetchTracksForPlaylist(playlistId, playlistName) {
@@ -231,50 +266,96 @@
         .then(response => response.json())
         .then(data => {
           hideSpinner();
+          document.getElementById('playlistDetails').style.display = 'block';
           if (data.length === 0) {
             timelineContainer.textContent = `Nessuna traccia trovata per "${playlistName}"`;
             tracksList.textContent = `Nessuna traccia trovata per "${playlistName}"`;
           } else {
             let listHtml = '<ul>';
             const artistsMap = {};
+            
             data.forEach(track => {
-              listHtml += `<li>ID: ${track.spotifyTrackId} - ${track.title} - ${track.artist.name} (${track.releaseDate})</li>`;
+              const trackMatched = (track.releaseDate && track.releaseDate !== "N/D");
+              const trackSymbol = trackMatched ? `<span class="checkmark">✔️</span>` 
+                                               : `<span class="crossmark">❌</span>`;
+
               if (track.artist && track.artist.name) {
                 if (!artistsMap[track.artist.name]) {
                   artistsMap[track.artist.name] = track.artist;
                 }
               }
+              if(!trackMatched) {
+                listHtml += `
+                <li>
+                  ID: ${track.spotifyTrackId} - ${track.title} - ${track.artist.name} (${track.releaseDate || 'N/D'}) 
+                  ${trackSymbol}
+                </li>`;
+              }
             });
             listHtml += '</ul>';
-        
-            let artistsSummaryHtml = '<h3>Resoconto Artisti:</h3><ul>';
+
+            let artistsSummaryHtml = '<h3>Artisti non matchati</h3><ul>';
             for (const artistName in artistsMap) {
                 const artist = artistsMap[artistName];
-                artistsSummaryHtml += `<li>${artist.name} - Nascita/Fondazione: ${artist.birthDate} - Luogo: ${artist.birthPlace}</li>`;
+                const hasSmth = (artist.birthDate && artist.birthDate !== 'N/D')
+                              || (artist.birthPlace && artist.birthPlace !== 'N/D');
+                const artistSymbol = hasSmth ? `<span class="checkmark">✔️</span>` 
+                                             : `<span class="crossmark">❌</span>`;
+                if(!hasSmth) {
+                  artistsSummaryHtml += `
+                    <li>
+                      ${artist.name} - ${artist.birthPlace}, ${artist.birthDate} ${artistSymbol}
+                    </li>`;
+                }
             }
             artistsSummaryHtml += '</ul>';
 
             tracksList.innerHTML = artistsSummaryHtml + listHtml;
 
-            const items = data.map((track, index) => {
-                if (track.releaseDate && track.releaseDate !== "N/D") {
+           const items = data.map((track, index) => {
+              if (track.releaseDate && track.releaseDate !== "N/D") {
                 const dateParts = track.releaseDate.split('/');
                 if (dateParts.length === 3) {
-                    const isoDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
-                    return {
+                  const isoDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                  return {
                     id: index,
                     content: `<strong>${track.title}</strong><br>${track.artist.name}`,
                     start: isoDate
-                    };
+                  };
                 }
-                }
-                return null;
+              }
+              return null;
             }).filter(item => item !== null);
 
             items.sort((a, b) => new Date(a.start) - new Date(b.start));
-            new vis.Timeline(timelineContainer, items, {
-                editable: false,
-                margin: { item: 20, axis: 40 }
+
+            const timelineData = {
+              title: {
+                text: {
+                  headline: "Le tue canzoni",
+                  text: "Scopri quando sono state pubblicate!"
+                }
+              },
+              events: items.map(item => {
+                const [year, month, day] = item.start.split('-');
+                return {
+                  start_date: {
+                    year: year,
+                    month: month,
+                    day: day
+                  },
+                  text: {
+                    headline: item.content,
+                    text: "" 
+                  }
+                };
+              })
+            };
+
+            new TL.Timeline('timelineContainer', timelineData, {
+              language: 'it',
+              timenav_position: 'bottom',
+              marker_height_min: 30
             });
 
             updateMapWithArtists(artistsMap);
