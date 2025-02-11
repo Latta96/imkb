@@ -25,19 +25,29 @@ public class WikidataService {
         "PREFIX wikibase: <http://wikiba.se/ontology#>\n" +
         "PREFIX bd: <http://www.bigdata.com/rdf#>\n";
 
-    public Artist getArtistInfo(String artistName) {
+    public Artist getArtistInfo(String artistName, String artistId) {
         String queryStr =
             SPARQL_PREFIXES +
             "SELECT ?artist ?artistLabel ?birthPlaceLabel ?birthDate ?countryLabel ?fundationDate WHERE {\n" +
-            "  ?artist rdfs:label \"" + artistName + "\"@en.\n" +
-            "  ?artist wdt:P31 ?type.\n" + 
-            "  FILTER(?type = wd:Q5 || ?type = wd:Q215380 || ?type = wd:Q5741069)\n" + // Q5: human; Q215380: musical group
-            "  OPTIONAL { ?artist wdt:P19 ?birthPlace. }\n" + 
-            "  OPTIONAL { ?artist wdt:P569 ?birthDate. }\n" + 
-            "  OPTIONAL { ?artist wdt:P571 ?fundationDate. }\n" +
-            "  OPTIONAL { ?artist wdt:P495 ?country. } # Per paese di origine, se gruppo\n" +
-            "  SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\". }\n" +
-            "} LIMIT 1";
+        "  {\n" +
+        "    ?artist wdt:P1902 \"" + artistId + "\".\n" +
+        "    OPTIONAL { ?artist wdt:P19 ?birthPlace. }\n" +
+        "    OPTIONAL { ?artist wdt:P569 ?birthDate. }\n" +
+        "    OPTIONAL { ?artist wdt:P571 ?fundationDate. }\n" +
+        "    OPTIONAL { ?artist wdt:P495 ?country. }\n" +
+        "  }\n" +
+        "  UNION\n" +
+        "  {\n" +
+        "    ?artist rdfs:label \"" + artistName + "\"@en.\n" +
+        "    ?artist wdt:P31 ?type.\n" + 
+        "    FILTER(?type = wd:Q5 || ?type = wd:Q215380 || ?type = wd:Q5741069)\n" +
+        "    OPTIONAL { ?artist wdt:P19 ?birthPlace. }\n" +
+        "    OPTIONAL { ?artist wdt:P569 ?birthDate. }\n" +
+        "    OPTIONAL { ?artist wdt:P571 ?fundationDate. }\n" +
+        "    OPTIONAL { ?artist wdt:P495 ?country. }\n" +
+        "  }\n" +
+        "  SERVICE wikibase:label { bd:serviceParam wikibase:language \"en,it\". }\n" +
+        "} LIMIT 1";
     
         Query query = QueryFactory.create(queryStr);
         try (QueryExecution qexec = QueryExecutionHTTP

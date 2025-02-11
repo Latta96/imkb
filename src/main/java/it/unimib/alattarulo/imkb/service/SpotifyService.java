@@ -93,6 +93,7 @@ public class SpotifyService {
                     if (item.getTrack().getArtists() != null && !item.getTrack().getArtists().isEmpty()) {
                         Artist artist = new Artist();
                         artist.setName(item.getTrack().getArtists().get(0).getName());
+                        artist.setSpotifyArtistId(item.getTrack().getArtists().get(0).getId());
                         t.setArtist(artist);
                     }
                     tracks.add(t);
@@ -120,10 +121,10 @@ public class SpotifyService {
             Map<String, Artist> artistSummaryMap = new HashMap<>();
             for (Track t : tracks) {
                 if (t.getArtist() != null) {
-                    String artistName = t.getArtist().getName();
-                    if (!artistSummaryMap.containsKey(artistName)) {
-                        Artist artistSummary = wikidataService.getArtistInfo(artistName);
-                        artistSummaryMap.put(artistName, artistSummary);
+                    Artist artist = t.getArtist();
+                    if (!artistSummaryMap.containsKey(artist.getName())) {
+                        Artist artistSummary = wikidataService.getArtistInfo(artist.getName(), artist.getSpotifyArtistId());
+                        artistSummaryMap.put(artist.getName(), artistSummary);
                     }
                 }
             }
@@ -183,5 +184,6 @@ class SpotifyTrack {
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 class SpotifyArtist {
+    private String id;
     private String name;
 }

@@ -267,11 +267,14 @@
         .then(data => {
           hideSpinner();
           document.getElementById('playlistDetails').style.display = 'block';
+          setTimeout(() => {
+            map.invalidateSize();
+          }, 100);
           if (data.length === 0) {
             timelineContainer.textContent = `Nessuna traccia trovata per "${playlistName}"`;
             tracksList.textContent = `Nessuna traccia trovata per "${playlistName}"`;
           } else {
-            let listHtml = '<ul>';
+            let listHtml = '<h3>Tracce non matchate o parzialmente matchate</h3><ul>';
             const artistsMap = {};
             
             data.forEach(track => {
@@ -292,7 +295,7 @@
                 </li>`;
               }
             });
-            listHtml += '</ul>';
+            listHtml += '<ul/>';
 
             let artistsSummaryHtml = '<h3>Artisti non matchati</h3><ul>';
             for (const artistName in artistsMap) {
