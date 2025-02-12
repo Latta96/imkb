@@ -3,8 +3,11 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PL(AI)LIST</title>
-  
+  <title>pl(AI)list</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">  
   <!-- TimelineJS CSS -->
   <link title="timeline-styles" rel="stylesheet" href="https://cdn.knightlab.com/libs/timeline3/latest/css/timeline.css">
   <!-- Leaflet CSS -->
@@ -28,6 +31,7 @@
     .header h1 {
       margin: 0;
       font-size: 2rem;
+      font-family: 'Pacifico';
     }
 
     .container {
@@ -70,9 +74,17 @@
       color: #1db954;
       margin-left: 5px;
     }
+    .questionmark {
+      color: #ff4d4d;
+      margin-left: 5px;
+    }
     .crossmark {
       color: #ff4d4d;
       margin-left: 5px;
+    }
+
+    .buttons {
+      text-align: center;
     }
 
     .spinner {
@@ -121,13 +133,13 @@
   <div class="container">
     <div class="buttons">
       <button id="loginButton">Login</button>
-      <button id="logoutButton">Logout</button>
       <button id="fetchPlaylists">Carica Playlist</button>
     </div>
-    <div id="spinner" class="spinner"></div>
+    
     
     <h2>Playlists</h2>
     <div id="playlistList"></div>
+    <div id="spinner" class="spinner"></div>
     <div id="playlistDetails" style="display: none;">
       <h2>Timeline</h2>
       <div id="timelineContainer"></div>
@@ -153,9 +165,6 @@
 
     document.getElementById('loginButton').addEventListener('click', () => {
       window.location.href = '/oauth2/authorization/spotify';
-    });
-    document.getElementById('logoutButton').addEventListener('click', () => {
-      window.location.href = '/logout';
     });
     document.getElementById('fetchPlaylists').addEventListener('click', fetchPlaylists);
 
@@ -274,7 +283,7 @@
             timelineContainer.textContent = `Nessuna traccia trovata per "${playlistName}"`;
             tracksList.textContent = `Nessuna traccia trovata per "${playlistName}"`;
           } else {
-            let listHtml = '<h3>Tracce non matchate o parzialmente matchate</h3><ul>';
+            let listHtml = '<h3>Tracce</h3><ul>';
             const artistsMap = {};
             
             data.forEach(track => {
@@ -287,29 +296,29 @@
                   artistsMap[track.artist.name] = track.artist;
                 }
               }
-              if(!trackMatched) {
-                listHtml += `
-                <li>
-                  ID: ${track.spotifyTrackId} - ${track.title} - ${track.artist.name} (${track.releaseDate || 'N/D'}) 
-                  ${trackSymbol}
-                </li>`;
-              }
+              listHtml += `
+              <li>
+                ID: ${track.spotifyTrackId} - ${track.title} - ${track.artist.name} (${track.releaseDate || 'N/D'}) 
+                ${trackSymbol}
+              </li>`;
+              
             });
             listHtml += '<ul/>';
 
-            let artistsSummaryHtml = '<h3>Artisti non matchati</h3><ul>';
+            let artistsSummaryHtml = '<h3>Artisti</h3><ul>';
             for (const artistName in artistsMap) {
                 const artist = artistsMap[artistName];
                 const hasSmth = (artist.birthDate && artist.birthDate !== 'N/D')
                               || (artist.birthPlace && artist.birthPlace !== 'N/D');
-                const artistSymbol = hasSmth ? `<span class="checkmark">✔️</span>` 
-                                             : `<span class="crossmark">❌</span>`;
-                if(!hasSmth) {
+                const hasBoth = (artist.birthDate && artist.birthDate !== 'N/D')
+                              && (artist.birthPlace && artist.birthPlace !== 'N/D');
+                const artistSymbol = hasBoth ? `<span class="checkmark">✔️</span>` 
+                                             : (hasSmth ? `<span class="questionmark">❓</span>` 
+                                                        : `<span class="crossmark">❌</span>`);
                   artistsSummaryHtml += `
                     <li>
-                      ${artist.name} - ${artist.birthPlace}, ${artist.birthDate} ${artistSymbol}
+                      ${artist.name} - ${artist.birthPlace ? artist.birthPlace : 'N/D'}, ${artist.birthDate ? artist.birthDate : 'N/D'} ${artistSymbol}
                     </li>`;
-                }
             }
             artistsSummaryHtml += '</ul>';
 
