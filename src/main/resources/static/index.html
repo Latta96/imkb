@@ -8,9 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">  
-  <!-- TimelineJS CSS -->
   <link title="timeline-styles" rel="stylesheet" href="https://cdn.knightlab.com/libs/timeline3/latest/css/timeline.css">
-  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"/>
 
   <style>
@@ -54,7 +52,10 @@
       display: inline-block;
     }
     button:hover, .playlist-link:hover {
-      background-color: #15943e;
+      background-color: #0c5623;
+    }
+    .playlist-link.active {
+      background-color: #0c5623;
     }
 
     #tracksList ul {
@@ -152,9 +153,7 @@
     </div>
   </div>
   
-  <!-- TimelineJS JavaScript -->
   <script src="https://cdn.knightlab.com/libs/timeline3/latest/js/timeline.js"></script>
-  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
   
   <script>
@@ -191,6 +190,8 @@
             link.classList.add('playlist-link');
             link.addEventListener('click', event => {
               event.preventDefault();
+              document.querySelectorAll('.playlist-link').forEach(link => link.classList.remove('active'));
+              event.currentTarget.classList.add('active');
               fetchTracksForPlaylist(playlist.id, playlist.name);
             });
             playlistList.appendChild(link);
@@ -204,8 +205,9 @@
     }
 
     function geocodeAddress(address) {
+      const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
-      return fetch(url)
+      return fetch(proxyUrl + url)
         .then(response => response.json())
         .then(data => {
           if (data && data.length > 0) {

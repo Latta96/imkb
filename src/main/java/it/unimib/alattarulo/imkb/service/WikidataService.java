@@ -272,33 +272,20 @@ public class WikidataService {
         return tracks;
     }
 
-    /**
-     * Converte una stringa in formato xsd:dateTime (es: 2021-01-01T00:00:00Z o 2021-01-01)
-     * in formato dd/MM/yyyy (es: 01/01/2021).
-     */
     private String convertXsdToDdMmYyyy(String xsdDateStr) {
-        /*  Molti valori di P577 possono apparire come:
-        /   YYYY-MM-DD
-        /   YYYY-MM-DDT00:00:00Z
-        /   YYYY
-        */
         try {
-            if (xsdDateStr.matches("\\d{4}-\\d{2}-\\d{2}")) {
-                // Formato YYYY-MM-DD
+            if (xsdDateStr.matches("\\d{4}-\\d{2}-\\d{2}")) { // Formato YYYY-MM-DD
                 LocalDate date = LocalDate.parse(xsdDateStr);
                 return date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-            } else if (xsdDateStr.matches("\\d{4}-\\d{2}-\\d{2}T.*")) {
-                // Formato con T e forse Z (es. 2021-01-01T00:00:00Z)
+            } else if (xsdDateStr.matches("\\d{4}-\\d{2}-\\d{2}T.*")) { // Formato con T e/o Z (es. 2021-01-01T00:00:00Z) 
                 OffsetDateTime odt = OffsetDateTime.parse(xsdDateStr);
                 return odt.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-            } else if (xsdDateStr.matches("\\d{4}")) {
-                // Solo l'anno
+            } else if (xsdDateStr.matches("\\d{4}")) { // Formato YYYY
                 return "01/01/" + xsdDateStr;
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        // Se il parsing fallisce o non corrisponde ai pattern, restituiamo la stringa originale
         return xsdDateStr;
     }
 }
