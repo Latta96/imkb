@@ -191,7 +191,7 @@ public class WikidataService {
             "  ?song wdt:P31 ?type.\n" +
             "  FILTER(?type = wd:Q2188189 || ?type = wd:Q134556)\n" +
             "  ?song wdt:P577 ?releaseDate.\n" +
-            "  SERVICE wikibase:label { bd:serviceParam wikibase:language \"en,it\". }\n" +
+            //"  SERVICE wikibase:label { bd:serviceParam wikibase:language \"en,it\". }\n" +
             "}";
     
         Query query = QueryFactory.create(queryStr);
